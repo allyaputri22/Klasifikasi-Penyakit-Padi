@@ -145,19 +145,26 @@ def predict_image(image, model):
 # ======================
 # UPLOAD
 # ======================
-uploaded_file = st.file_uploader(
-    "📤 Pilih gambar daun padi untuk dianalisis",
-    type=["jpg", "jpeg", "png"],
-    help="Format yang didukung: JPG, JPEG, PNG. Pastikan gambar jelas dan fokus pada daun padi."
-)
+with st.form("prediction_form"):
 
-if uploaded_file:
+    uploaded_file = st.file_uploader(
+        "📤 Pilih gambar daun padi untuk dianalisis",
+        type=["jpg", "jpeg", "png"],
+        help="Format yang didukung: JPG, JPEG, PNG. Pastikan gambar jelas dan fokus pada daun padi."
+    )
+
+    submit = st.form_submit_button(
+        "🔍 Mulai Analisis",
+        use_container_width=True
+    )
+
+if uploaded_file is not None and submit:
+
     img_input = Image.open(uploaded_file).convert("RGB")
 
-    if st.button("🔍 Mulai Analisis", type="primary", use_container_width=True):
+    with st.spinner("🔄 Menganalisis gambar..."):
+        preds, idx, conf = predict_image(img_input, model)
 
-        with st.spinner("🔄 Menganalisis gambar..."):
-            preds, idx, conf = predict_image(img_input, model)
 
         # ======================
         # HASIL ANALISIS
