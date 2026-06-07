@@ -108,17 +108,22 @@ def load_model_rebuild():
         tf.keras.layers.GlobalAveragePooling2D(),
         tf.keras.layers.Dense(128, activation='relu'),
         tf.keras.layers.Dropout(0.5),
-        tf.keras.layers.Dense(3, activation='softmax')
+        tf.keras.layers.Dense(4, activation='softmax')
     ])
 
     try:
-        model.load_weights("rice_leaf_model.weights.h5")
+        model.load_weights("rice_leaf_model_new.weights.h5")
         print("Model berhasil dimuat")
     except Exception as e:
         st.error(f"Gagal load model: {e}")
         st.stop()
 
-    labels = ["Bacterial Leaf Blight", "Healthy Rice Leaf", "Leaf Blast"]
+    labels = [
+    "Bacterial Leaf Blight",
+    "Healthy Rice Leaf",
+    "Leaf Blast",
+    "Not Leaf"
+]
     return model, labels
 
 
@@ -150,34 +155,62 @@ if uploaded_file:
     img_input = Image.open(uploaded_file).convert("RGB")
 
     if st.button("🔍 Mulai Analisis", type="primary", use_container_width=True):
+
         with st.spinner("🔄 Menganalisis gambar..."):
             preds, idx, conf = predict_image(img_input, model)
 
         # ======================
-        # HASIL ANALISIS - 2 KOLOM
+        # HASIL ANALISIS
         # ======================
         col1, col2 = st.columns(2)
 
-        # KIRI: Gambar
+        # KIRI
         with col1:
+
             st.subheader("Gambar Input")
-            # Convert gambar ke base64
+
             buffered = BytesIO()
             img_input.save(buffered, format="PNG")
             img_str = base64.b64encode(buffered.getvalue()).decode()
-            st.markdown(f'<div class="figure-box"><img src="data:image/png;base64,{img_str}" style="max-width:240px; border-radius:8px;"></div>', unsafe_allow_html=True)
 
-        # KANAN: Hasil
+            st.markdown(
+                f'''
+                <div class="figure-box">
+                    <div style="text-align:center;">
+                        <img src="data:image/png;base64,{img_str}"
+                             style="max-width:240px;border-radius:8px;">
+                        <p style="margin-top:10px;font-weight:600;color:#333;">
+                            📄 {uploaded_file.name}
+                        </p>
+                    </div>
+                </div>
+                ''',
+                unsafe_allow_html=True
+            )
+
+        # KANAN
         with col2:
+
             st.subheader("Hasil Analisis")
 
             if labels[idx] == "Healthy Rice Leaf":
-                st.success(f"✅ **Prediksi: {labels[idx]}**")
+                st.success(f"✅ Prediksi: {labels[idx]}")
+
+            elif labels[idx] == "Not Leaf":
+                st.warning(
+                    "📷 Gambar yang diunggah bukan daun padi atau objek tidak dapat dikenali sebagai daun padi."
+                )
+
             else:
-                st.error(f"⚠️ **Prediksi: {labels[idx]}**")
-            st.metric("Tingkat Kepercayaan", f"{conf:.2f}%")
+                st.error(f"⚠️ Prediksi: {labels[idx]}")
+
+            st.metric(
+                "Tingkat Kepercayaan",
+                f"{conf:.2f}%"
+            )
 
             st.markdown("### Probabilitas Kelas")
+
             for i, label in enumerate(labels):
                 prob_percent = preds[i] * 100
                 st.write(f"**{label}**: {prob_percent:.2f}%")
