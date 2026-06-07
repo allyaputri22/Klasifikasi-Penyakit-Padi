@@ -18,14 +18,12 @@ st.set_page_config(
 # ======================
 st.markdown("""
 <style>
-
 .block-container {
     padding-left: 2rem;
     padding-right: 2rem;
     padding-top: 2rem;
 }
 
-/* HEADER */
 .main-header {
     text-align: center;
     color: white;
@@ -45,85 +43,47 @@ st.markdown("""
     margin-bottom: 30px;
 }
 
-/* UPLOAD */
 .upload-section {
     background: #f8f9fa;
     padding: 20px;
     border-radius: 10px;
-    border: 2px dashed #A5D6A7;
+    border: 2px dashed #4CAF50;
     margin-bottom: 20px;
 }
 
-/* CARD */
 .result-card {
     background: white;
     padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     margin-bottom: 20px;
 }
 
-/* GAMBAR */
-.figure-box {
-    background: #ffffff;
-    border: 1px solid #dfe6e9;
-    border-radius: 18px;
-    padding: 18px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
-    margin-bottom: 16px;
-    min-height: 420px;
-}
+    .figure-box {
+        background: #ffffff;
+        border: 1px solid #dfe6e9;
+        border-radius: 18px;
+        padding: 18px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+        margin-bottom: 16px;
+        min-height: 420px;
+    }
 
-.figure-box img {
-    border-radius: 14px;
-    max-width: 100%;
-    height: auto;
-    object-fit: cover;
-    display: block;
-}
+    .figure-box img {
+        border-radius: 14px;
+        max-width: 100%;
+        height: auto;
+        object-fit: cover;
+        display: block;
+    }
 
-/* PROBABILITAS */
 .prob-section {
     background: #f8f9fa;
     padding: 15px;
     border-radius: 10px;
-}
-
-/* TOMBOL ANALISIS */
-.stButton > button {
-    background-color: #E8F5E9 !important;
-    color: #2E7D32 !important;
-    border: 1px solid #A5D6A7 !important;
-    border-radius: 8px !important;
-    font-weight: 600 !important;
-    padding: 0.6rem 1rem !important;
-    transition: all 0.2s ease !important;
-}
-
-.stButton > button:hover {
-    background-color: #C8E6C9 !important;
-    border: 1px solid #81C784 !important;
-    color: #1B5E20 !important;
-}
-
-.stButton > button:focus {
-    box-shadow: none !important;
-}
-
-/* FILE UPLOADER */
-[data-testid="stFileUploader"] {
-    border-radius: 12px;
-}
-
-/* METRIC */
-[data-testid="stMetric"] {
-    background: #FAFAFA;
-    padding: 12px;
-    border-radius: 10px;
-    border: 1px solid #EEEEEE;
 }
 
 </style>
@@ -183,25 +143,6 @@ def predict_image(image, model):
     return preds, idx, float(preds[idx] * 100)
 
 # ======================
-# SESSION STATE
-# ======================
-if "preds" not in st.session_state:
-    st.session_state.preds = None
-
-if "idx" not in st.session_state:
-    st.session_state.idx = None
-
-if "conf" not in st.session_state:
-    st.session_state.conf = None
-
-if "img_input" not in st.session_state:
-    st.session_state.img_input = None
-
-if "file_name" not in st.session_state:
-    st.session_state.file_name = None
-
-
-# ======================
 # UPLOAD
 # ======================
 uploaded_file = st.file_uploader(
@@ -210,8 +151,7 @@ uploaded_file = st.file_uploader(
     help="Format yang didukung: JPG, JPEG, PNG. Pastikan gambar jelas dan fokus pada daun padi."
 )
 
-if uploaded_file is not None:
-
+if uploaded_file:
     img_input = Image.open(uploaded_file).convert("RGB")
 
     if st.button("🔍 Mulai Analisis", type="primary", use_container_width=True):
@@ -219,78 +159,62 @@ if uploaded_file is not None:
         with st.spinner("🔄 Menganalisis gambar..."):
             preds, idx, conf = predict_image(img_input, model)
 
-        # Simpan hasil ke session_state
-        st.session_state.preds = preds
-        st.session_state.idx = idx
-        st.session_state.conf = conf
-        st.session_state.img_input = img_input
-        st.session_state.file_name = uploaded_file.name
+        # ======================
+        # HASIL ANALISIS
+        # ======================
+        col1, col2 = st.columns(2)
 
+        # KIRI
+        with col1:
 
-# ======================
-# TAMPILKAN HASIL
-# ======================
-if st.session_state.preds is not None:
+            st.subheader("Gambar Input")
 
-    preds = st.session_state.preds
-    idx = st.session_state.idx
-    conf = st.session_state.conf
-    img_input = st.session_state.img_input
-    file_name = st.session_state.file_name
+            buffered = BytesIO()
+            img_input.save(buffered, format="PNG")
+            img_str = base64.b64encode(buffered.getvalue()).decode()
 
-    col1, col2 = st.columns(2)
-
-    # KIRI
-    with col1:
-
-        st.subheader("Gambar Input")
-
-        buffered = BytesIO()
-        img_input.save(buffered, format="PNG")
-        img_str = base64.b64encode(buffered.getvalue()).decode()
-
-        st.markdown(
-            f'''
-            <div class="figure-box">
-                <div style="text-align:center;">
-                    <img src="data:image/png;base64,{img_str}"
-                         style="max-width:240px;border-radius:8px;">
-                    <p style="margin-top:10px;font-weight:600;color:#333;">
-                        📄 {file_name}
-                    </p>
+            st.markdown(
+                f'''
+                <div class="figure-box">
+                    <div style="text-align:center;">
+                        <img src="data:image/png;base64,{img_str}"
+                             style="max-width:240px;border-radius:8px;">
+                        <p style="margin-top:10px;font-weight:600;color:#333;">
+                            📄 {uploaded_file.name}
+                        </p>
+                    </div>
                 </div>
-            </div>
-            ''',
-            unsafe_allow_html=True
-        )
-
-    # KANAN
-    with col2:
-
-        st.subheader("Hasil Analisis")
-
-        if labels[idx] == "Healthy Rice Leaf":
-            st.success(f"✅ Prediksi: {labels[idx]}")
-
-        elif labels[idx] == "Not Leaf":
-            st.warning(
-                "📷 Gambar yang diunggah bukan daun padi atau objek tidak dapat dikenali sebagai daun padi."
+                ''',
+                unsafe_allow_html=True
             )
 
-        else:
-            st.error(f"⚠️ Prediksi: {labels[idx]}")
+        # KANAN
+        with col2:
 
-        st.metric(
-            "Tingkat Kepercayaan",
-            f"{conf:.2f}%"
-        )
+            st.subheader("Hasil Analisis")
 
-        st.markdown("### Probabilitas Kelas")
+            if labels[idx] == "Healthy Rice Leaf":
+                st.success(f"✅ Prediksi: {labels[idx]}")
 
-        for i, label in enumerate(labels):
-            prob_percent = preds[i] * 100
-            st.write(f"**{label}**: {prob_percent:.2f}%")
-            st.progress(float(preds[i]))
+            elif labels[idx] == "Not Leaf":
+                st.warning(
+                    "📷 Gambar yang diunggah bukan daun padi atau objek tidak dapat dikenali sebagai daun padi."
+                )
+
+            else:
+                st.error(f"⚠️ Prediksi: {labels[idx]}")
+
+            st.metric(
+                "Tingkat Kepercayaan",
+                f"{conf:.2f}%"
+            )
+
+            st.markdown("### Probabilitas Kelas")
+
+            for i, label in enumerate(labels):
+                prob_percent = preds[i] * 100
+                st.write(f"**{label}**: {prob_percent:.2f}%")
+                st.progress(float(preds[i]))
 
 # ======================
 # FOOTER
